@@ -5,75 +5,79 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Windows.Speech;
 
-public class ActionManager : Singleton<ActionManager>
+namespace LiveScan3D
 {
-    public enum ActionType { Manipulation, Rotation, Zoom };
-
-    // KeywordRecognizer object.
-    KeywordRecognizer keywordRecognizer;
-
-    // Defines which function to call when a keyword is recognized.
-    delegate void KeywordAction(PhraseRecognizedEventArgs args);
-    Dictionary<string, KeywordAction> keywordCollection;
-
-    public event Action ResetEvent;
-    public ActionType CurrentAction { get; private set; }
-
-    void Start()
+    public class ActionManager : Singleton<ActionManager>
     {
-        keywordCollection = new Dictionary<string, KeywordAction>();
+        public enum ActionType { Manipulation, Rotation, Zoom };
 
-        keywordCollection.Add("Move", MoveCommand);
-        keywordCollection.Add("Rotate", RotateCommand);
-        keywordCollection.Add("Zoom", ZoomCommand);     
-        keywordCollection.Add("Reset", ResetCommand);
+        // KeywordRecognizer object.
+        KeywordRecognizer keywordRecognizer;
 
+        // Defines which function to call when a keyword is recognized.
+        delegate void KeywordAction(PhraseRecognizedEventArgs args);
+        Dictionary<string, KeywordAction> keywordCollection;
 
-        // Initialize KeywordRecognizer with the previously added keywords.
-        keywordRecognizer = new KeywordRecognizer(keywordCollection.Keys.ToArray());
-        keywordRecognizer.OnPhraseRecognized += KeywordRecognizer_OnPhraseRecognized;
-        keywordRecognizer.Start();
+        public event Action ResetEvent;
+        public ActionType CurrentAction { get; private set; }
 
-        GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.ManipulationRecognizer);
-        CurrentAction = ActionType.Manipulation;
-    }
-
-    void OnDestroy()
-    {
-        if (keywordRecognizer != null)
-            keywordRecognizer.Dispose();
-    }
-
-    private void KeywordRecognizer_OnPhraseRecognized(PhraseRecognizedEventArgs args)
-    {
-        KeywordAction keywordAction;
-
-        if (keywordCollection.TryGetValue(args.text, out keywordAction))
+        void Start()
         {
-            keywordAction.Invoke(args);
+            keywordCollection = new Dictionary<string, KeywordAction>();
+
+            keywordCollection.Add("Move", MoveCommand);
+            keywordCollection.Add("Rotate", RotateCommand);
+            keywordCollection.Add("Zoom", ZoomCommand);
+            keywordCollection.Add("Reset", ResetCommand);
+
+
+            // Initialize KeywordRecognizer with the previously added keywords.
+            keywordRecognizer = new KeywordRecognizer(keywordCollection.Keys.ToArray());
+            keywordRecognizer.OnPhraseRecognized += KeywordRecognizer_OnPhraseRecognized;
+            keywordRecognizer.Start();
+
+            GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.ManipulationRecognizer);
+            CurrentAction = ActionType.Manipulation;
+        }
+
+        void OnDestroy()
+        {
+            if (keywordRecognizer != null)
+                keywordRecognizer.Dispose();
+        }
+
+        private void KeywordRecognizer_OnPhraseRecognized(PhraseRecognizedEventArgs args)
+        {
+            KeywordAction keywordAction;
+
+            if (keywordCollection.TryGetValue(args.text, out keywordAction))
+            {
+                keywordAction.Invoke(args);
+            }
+        }
+
+        private void MoveCommand(PhraseRecognizedEventArgs args)
+        {
+            GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.ManipulationRecognizer);
+            CurrentAction = ActionType.Manipulation;
+        }
+
+        private void RotateCommand(PhraseRecognizedEventArgs args)
+        {
+            GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.NavigationRecognizer);
+            CurrentAction = ActionType.Rotation;
+        }
+
+        private void ZoomCommand(PhraseRecognizedEventArgs args)
+        {
+            GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.NavigationRecognizer);
+            CurrentAction = ActionType.Zoom;
+        }
+
+        private void ResetCommand(PhraseRecognizedEventArgs args)
+        {
+            ResetEvent.Invoke();
         }
     }
-
-    private void MoveCommand(PhraseRecognizedEventArgs args)
-    {
-        GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.ManipulationRecognizer);
-        CurrentAction = ActionType.Manipulation;
-    }
-
-    private void RotateCommand(PhraseRecognizedEventArgs args)
-    {
-        GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.NavigationRecognizer);
-        CurrentAction = ActionType.Rotation;
-    }
-
-    private void ZoomCommand(PhraseRecognizedEventArgs args)
-    {
-        GestureManager.Instance.SetActiveRecognizer(GestureManager.Instance.NavigationRecognizer);
-        CurrentAction = ActionType.Zoom;
-    }
-
-    private void ResetCommand(PhraseRecognizedEventArgs args)
-    {
-        ResetEvent.Invoke();
-    }
 }
+

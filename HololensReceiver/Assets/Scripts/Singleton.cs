@@ -1,17 +1,20 @@
 ﻿using UnityEngine;
 
-public class Singleton<T> : MonoBehaviour where T : Singleton<T>
+namespace LiveScan3D
 {
-    private static T _Instance;
-    public static T Instance
+    public class Singleton<T> : MonoBehaviour where T : Singleton<T>
     {
-        get
+        private static T _Instance;
+        public static T Instance
         {
-            if (_Instance == null)
+            get
             {
-                _Instance = FindObjectOfType<T>();
+                if (_Instance == null)
+                {
+                    _Instance = FindObjectOfType<T>();
+                }
+                return _Instance;
             }
-            return _Instance;
         }
     }
 }

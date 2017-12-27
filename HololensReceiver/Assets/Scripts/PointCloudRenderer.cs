@@ -1,86 +1,89 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class PointCloudRenderer : MonoBehaviour
+namespace LiveScan3D
 {
-    public int maxChunkSize = 65535;
-    public float pointSize = 0.005f;
-    public GameObject pointCloudElem;
-    public Material pointCloudMaterial;
-
-    List<GameObject> elems;
-
-    void Start()
+    public class PointCloudRenderer : MonoBehaviour
     {
-        elems = new List<GameObject>();
-        UpdatePointSize();
-    }
+        public int maxChunkSize = 65535;
+        public float pointSize = 0.005f;
+        public GameObject pointCloudElem;
+        public Material pointCloudMaterial;
 
-    void Update()
-    {
-        if (transform.hasChanged)
+        List<GameObject> elems;
+
+        void Start()
         {
+            elems = new List<GameObject>();
             UpdatePointSize();
-            transform.hasChanged = false;
         }
-    }
 
-    void UpdatePointSize()
-    {
-        pointCloudMaterial.SetFloat("_PointSize", pointSize * transform.localScale.x);
-    }
+        void Update()
+        {
+            if (transform.hasChanged)
+            {
+                UpdatePointSize();
+                transform.hasChanged = false;
+            }
+        }
 
-    public void Render(float[] arrVertices, byte[] arrColors)
-    {
-        int nPoints, nChunks;
-        if (arrVertices == null || arrColors == null)
+        void UpdatePointSize()
         {
-            nPoints = 0;
-            nChunks = 0;
+            pointCloudMaterial.SetFloat("_PointSize", pointSize * transform.localScale.x);
         }
-        else
+
+        public void Render(float[] arrVertices, byte[] arrColors)
         {
-            nPoints = arrVertices.Length / 3;
-            nChunks = 1 + nPoints / maxChunkSize;
-        }
+            int nPoints, nChunks;
+            if (arrVertices == null || arrColors == null)
+            {
+                nPoints = 0;
+                nChunks = 0;
+            }
+            else
+            {
+                nPoints = arrVertices.Length / 3;
+                nChunks = 1 + nPoints / maxChunkSize;
+            }
         
-        if (elems.Count < nChunks)
-            AddElems(nChunks - elems.Count);
-        if (elems.Count > nChunks)
-            RemoveElems(elems.Count - nChunks);
+            if (elems.Count < nChunks)
+                AddElems(nChunks - elems.Count);
+            if (elems.Count > nChunks)
+                RemoveElems(elems.Count - nChunks);
 
-        int offset = 0;
-        for (int i = 0; i < nChunks; i++)
-        {
-            int nPointsToRender = System.Math.Min(maxChunkSize, nPoints - offset);
+            int offset = 0;
+            for (int i = 0; i < nChunks; i++)
+            {
+                int nPointsToRender = System.Math.Min(maxChunkSize, nPoints - offset);
 
-            ElemRenderer renderer = elems[i].GetComponent<ElemRenderer>();
-            renderer.UpdateMesh(arrVertices, arrColors, nPointsToRender, offset);
+                ElemRenderer renderer = elems[i].GetComponent<ElemRenderer>();
+                renderer.UpdateMesh(arrVertices, arrColors, nPointsToRender, offset);
 
-            offset += nPointsToRender;
+                offset += nPointsToRender;
+            }
         }
-    }
 
-    void AddElems(int nElems)
-    {
-        for (int i = 0; i < nElems; i++)
+        void AddElems(int nElems)
         {
-            GameObject newElem = GameObject.Instantiate(pointCloudElem);
-            newElem.transform.parent = transform;
-            newElem.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
-            newElem.transform.localRotation = Quaternion.identity;
-            newElem.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+            for (int i = 0; i < nElems; i++)
+            {
+                GameObject newElem = GameObject.Instantiate(pointCloudElem);
+                newElem.transform.parent = transform;
+                newElem.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
+                newElem.transform.localRotation = Quaternion.identity;
+                newElem.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 
-            elems.Add(newElem);
-        }            
-    }
+                elems.Add(newElem);
+            }            
+        }
 
-    void RemoveElems(int nElems)
-    {
-        for (int i = 0; i < nElems; i++)
+        void RemoveElems(int nElems)
         {
-            Destroy(elems[0]);
-            elems.Remove(elems[0]);
+            for (int i = 0; i < nElems; i++)
+            {
+                Destroy(elems[0]);
+                elems.Remove(elems[0]);
+            }
         }
     }
 }
